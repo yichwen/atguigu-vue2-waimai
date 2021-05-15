@@ -3,5 +3,9 @@ export default {
   longtitude: 116.36867,
   address: {},
   foodTypes: [],
-  shopList: []
+  shopList: [],
+  userInfo: {},
+  goods: [],
+  ratings: [],
+  info: {}
 }

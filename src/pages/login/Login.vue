@@ -47,8 +47,10 @@
                 <input type="text" maxlength="11" placeholder="验证码" v-model="captcha" />
                 <img
                   class="get_verification"
-                  src="./images/captcha.svg"
+                  src="http://localhost:4000/captcha"
                   alt="captcha"
+                  @click="getCaptcha"
+                  ref="captcha"
                 />
               </section>
             </section>
@@ -67,6 +69,7 @@
 
 <script>
 import AlertTip from '@/components/alert-tip/AlertTip'
+import { reqPasswordLogin, reqSmsLogin, reqSendCode } from '../../api'
 
 export default {
   data () {
@@ -85,7 +88,8 @@ export default {
       captcha: '',
       alertText: '',
       // 是否显示提示框
-      showAlert: false
+      showAlert: false,
+      intervalId: undefined
     }
   },
   computed: {
@@ -94,20 +98,29 @@ export default {
     }
   },
   methods: {
-    getCode () {
+    async getCode () {
       // 启动倒计时
       if (this.codeValidSeconds <= 0) {
         this.codeValidSeconds = 30
-        const intervalId = setInterval(() => {
+        this.intervalId = setInterval(() => {
           this.codeValidSeconds--
           if (this.codeValidSeconds <= 0) {
-            clearInterval(intervalId)
+            clearInterval(this.intervalId)
           }
         }, 1000)
         // 发送ajax请求(向指定手机号发送验证码信息)
+        const result = await reqSendCode(this.phone)
+        if (result.code === 1) {
+          this.showAlertModal(result.msg)
+          if (this.codeValidSeconds) {
+            this.codeValidSeconds = 0
+            clearInterval(this.intervalId)
+          }
+        }
       }
     },
-    login () {
+    async login () {
+      let result
       // 前台表单验证
       if (this.loginType) {
         // 短信登录
@@ -115,22 +128,44 @@ export default {
         if (!rightPhone) {
           // 手机号不正确
           this.showAlertModal('手机号不正确')
+          return
         } else if (!/^\d{6}$/.test(code)) {
           // 验证码不正确
           this.showAlertModal('验证码不正确')
+          return
         } else {
-
+          result = await reqSmsLogin(phone, code)
         }
       } else {
         // 用户名登录
         const { name, password, captcha } = this
         if (!name) {
           this.showAlertModal('必须填写用户名')
+          return
         } else if (!password) {
           this.showAlertModal('必须填写用密码')
+          return
         } else if (!captcha) {
           this.showAlertModal('必须填写验证码')
+          return
+        } else {
+          result = await reqPasswordLogin(name, password, captcha)
         }
+      }
+
+      if (this.codeValidSeconds) {
+        this.codeValidSeconds = 0
+        clearInterval(this.intervalId)
+      }
+
+      if (result.code === 0) {
+        const user = result.data
+        this.$store.dispatch('recordUser', user)
+        this.$router.replace('/profile')
+      } else {
+        this.getCaptcha()
+        const msg = result.msg
+        this.showAlertModal(msg)
       }
     },
     closeTip () {
@@ -140,6 +175,10 @@ export default {
     showAlertModal (alertText) {
       this.alertText = alertText
       this.showAlert = true
+    },
+    // 获取一个新的图片验证码
+    getCaptcha () {
+      this.$refs.captcha.src = 'http://localhost:4000/captcha?time=' + Date.now()
     }
   },
   components: {
