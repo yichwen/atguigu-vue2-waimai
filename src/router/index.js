@@ -1,10 +1,16 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
 
-import MSite from '../pages/msite/MSite'
-import Search from '../pages/search/Search'
-import Profile from '../pages/profile/Profile'
-import Order from '../pages/order/Order'
+// import MSite from '../pages/msite/MSite'
+// import Search from '../pages/search/Search'
+// import Profile from '../pages/profile/Profile'
+// import Order from '../pages/order/Order'
+
+const MSite = () => import('../pages/msite/MSite')
+const Search = () => import('../pages/search/Search')
+const Profile = () => import('../pages/profile/Profile')
+const Order = () => import('../pages/order/Order')
+
 import Login from '../pages/login/Login'
 import Shop from '../pages/shop/shop'
 import ShopInfo from '../pages/shop/shop-info/ShopInfo'
@@ -43,7 +49,7 @@ export default new VueRouter({
     },
     {
       path: '/msite',
-      component: MSite,
+      component: MSite, // MSite是返回路由组件的函数，只有执行此函数才会进行加载，这个函数在请求对应的路径时才会请求
       meta: {
         showFooter: true
       }

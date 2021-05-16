@@ -6,7 +6,11 @@ import {
   RESET_USERINFO,
   RECEIVE_GOODS,
   RECEIVE_RATINGS,
-  RECEIVE_INFO
+  RECEIVE_INFO,
+  INCREMENT_FOOD_COUNT,
+  DECREMENT_FOOD_COUNT,
+  CLEAR_CART,
+  RECEIVE_SEARCH_SHOP
 } from './mutation-types'
 
 import {
@@ -17,7 +21,8 @@ import {
   reqUserInfo,
   reqShopGoods,
   reqShopRatings,
-  reqShopInfo
+  reqShopInfo,
+  reqSearchShopList
 } from '../api'
 
 export default {
@@ -66,11 +71,13 @@ export default {
     }
   },
 
-  async getShopGoods ({commit}) {
+  async getShopGoods ({commit}, cb) {
     const result = await reqShopGoods()
     if (result.code === 0) {
       const goods = result.data
       commit(RECEIVE_GOODS, {goods})
+      // 数据更新后执行回调函数
+      cb && cb()
     }
   },
 
@@ -82,11 +89,34 @@ export default {
     }
   },
 
-  async getShopRatings ({commit}) {
+  async getShopRatings ({commit}, cb) {
     const result = await reqShopRatings()
     if (result.code === 0) {
       const ratings = result.data
       commit(RECEIVE_RATINGS, {ratings})
+       // 数据更新后执行回调函数
+       cb && cb()
+    }
+  },
+
+  updateFoodCount ({commit}, { isAdd, food }) {
+    if (isAdd) {
+      commit(INCREMENT_FOOD_COUNT, {food})
+    } else {
+      commit(DECREMENT_FOOD_COUNT, {food})
+    }
+  },
+
+  clearCart ({commit}) {
+    commit(CLEAR_CART)
+  },
+
+  async searchShop ({commit, state}, keyword) {
+    const geohash = state.latitude + ',' + state.longtitude
+    const result = await reqSearchShopList(geohash, keyword)
+    if (result.code === 0) {
+      const searchShops = result.data
+      commit(RECEIVE_SEARCH_SHOP, {searchShops})
     }
   }
 
